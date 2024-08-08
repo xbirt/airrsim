@@ -31,6 +31,12 @@ def check_file_exists(file_path, file_type):
     if not os.path.isfile(file_path):
         raise FileNotFoundError(f"Error: {file_type} file not found: {file_path}")
 
+def case_insensitive_group(value):
+    """
+    Convert input to uppercase, but keep 'all' as is.
+    """
+    return value.upper() if value.lower() != 'all' else 'all'
+
 def parse_args():
     """
     Parse command-line arguments for the AIRR Simulation Tool.
@@ -43,7 +49,7 @@ def parse_args():
 
     # Common arguments for generateClonotypes and downloadData
     common_parser = argparse.ArgumentParser(add_help=False)
-    common_parser.add_argument('group', type=str.upper, choices=['TRA', 'TRB', 'TRG', 'TRD', 'IGH', 'IGK', 'IGL', 'all'], help='Receptor group')
+    common_parser.add_argument('group', type=case_insensitive_group, choices=['TRA', 'TRB', 'TRG', 'TRD', 'IGH', 'IGK', 'IGL', 'all'], help='Receptor group')
     common_parser.add_argument('--species', choices=['human', 'mouse', 'all'], default='human', help='Species (default: human)')
 
     # generateClonotypes subparser
