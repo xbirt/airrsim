@@ -62,6 +62,9 @@ def parse_args():
     constant_region_group = parser_generate.add_mutually_exclusive_group()
     constant_region_group.add_argument('--with-constant-region', '--include-constant-region', '--with-c-region', '--include-c-region', dest='with_constant_region', action='store_true', default=True, help='Include constant region in the output sequences (default)')
     constant_region_group.add_argument('--without-constant-region', '--exclude-constant-region', '--without-c-region', '--exclude-c-region', '--no-c-region', dest='with_constant_region', action='store_false', help='Exclude constant region from the output sequences')
+    parser_generate.add_argument('--with-alignment-preservation', action='store_true', default=True, help='Preserve codon alignment in recombination (default: True)')
+    parser_generate.add_argument('--without-alignment-preservation', action='store_false', dest='with_alignment_preservation', help='Do not preserve codon alignment in recombination')
+
     parser_generate.add_argument('--v_file', type=str, help='Path to V gene segment file')
     parser_generate.add_argument('--d_file', type=str, help='Path to D gene segment file')
     parser_generate.add_argument('--j_file', type=str, help='Path to J gene segment file')
@@ -120,7 +123,8 @@ def generate_clonotypes(args):
 
         simulate_receptor_repertoires(args.group, args.output, v_file, j_file, d_file, c_file,
                                       num_clonotypes=args.count, shm_rate=args.shm_rate,
-                                      apply_shm=args.with_shm, append_constant_region=args.with_constant_region)
+                                      apply_shm=args.with_shm, append_constant_region=args.with_constant_region,
+                                      preserve_alignment=args.with_alignment_preservation)
     except FileNotFoundError as e:
         print(e)
         exit(1)  # Exit with error code 1

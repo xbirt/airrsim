@@ -114,30 +114,35 @@ def get_p_nucleotides(sequence, max_length=2):
     p_length = random.randint(0, max_length)
     return ''.join(complement[base] for base in reversed(sequence[:p_length]))
 
-def get_n_nucleotides(max_length=12):
+def get_n_nucleotides(length=None, max_length=12):
     """
     Add N-nucleotides (random nucleotides).
     
     Parameters:
-    max_length (int): Maximum number of N-nucleotides to add.
+    length (int, optional): Exact number of N-nucleotides to add. If None, a random length up to max_length is used.
+    max_length (int): Maximum number of N-nucleotides to add when length is not specified.
     
     Returns:
     str: String of random nucleotides.
     """
-    return ''.join(random.choice("ATGC") for _ in range(random.randint(0, max_length)))
+    if length is not None:
+        return ''.join(random.choice("ATGC") for _ in range(length))
+    else:
+        return ''.join(random.choice("ATGC") for _ in range(random.randint(0, max_length)))
 
-def recombine_segments(v, d, j, apply_shm=False, shm_rate=0.001):
+def recombine_segments(v, d, j, apply_shm=False, shm_rate=0.001, preserve_alignment=True):
     """
     Recombine V, (D), and J segments to create a clonotype.
-    Optionally applies Somatic Hypermutation.
+    Optionally applies Somatic Hypermutation and preserves reading frame alignment.
     
     Parameters:
     v, d, j (str): Coding sequences of V, D, and J segments.
     apply_shm (bool): Whether to apply Somatic Hypermutation.
     shm_rate (float): The mutation rate for SHM.
+    preserve_alignment (bool): Whether to preserve the reading frame alignment.
     
     Returns:
-    str: Recombined sequence representing a clonotype, potentially with SHM.
+    tuple: Recombined sequence representing a clonotype and recombination info dictionary.
     """
     max_trim_v_j = 15
     recombination_info = {}
@@ -169,9 +174,20 @@ def recombine_segments(v, d, j, apply_shm=False, shm_rate=0.001):
         d_p_nucleotides_3 = get_p_nucleotides(d_mid)
         d_mid = d_p_nucleotides_5[::-1] + d_mid + d_p_nucleotides_3
 
-        # Add N-nucleotides and combine segments
+        # Add N-nucleotides
         vd_junction = get_n_nucleotides(max_length=12)
         dj_junction = get_n_nucleotides(max_length=12)
+
+        if preserve_alignment:
+            # Calculate the required adjustment
+            pre_j_length = len(v_end) + len(vd_junction) + len(d_mid) + len(dj_junction)
+            pre_j_adjustment_required = (3 - (pre_j_length % 3)) % 3
+            j_adjustment_required = (j_trim_length - len(j_p_nucleotides)) % 3 if len(j_start) > 0 else 0
+            adjustment_needed = (pre_j_adjustment_required + j_adjustment_required) % 3
+            
+            # Adjust the DJ junction to bring J in-frame
+            dj_junction = adjust_for_alignment(dj_junction, len(dj_junction) + adjustment_needed)
+
         recombined_sequence = v_end + vd_junction + d_mid + dj_junction + j_start
 
         recombination_info['d_region_len'] = len(d)
@@ -182,6 +198,17 @@ def recombine_segments(v, d, j, apply_shm=False, shm_rate=0.001):
     else:
         # If no D segment or empty D segment, just add N-nucleotides between V and J
         vj_junction = get_n_nucleotides(max_length=15)  # Slightly more for V-J junctions
+        
+        if preserve_alignment:
+            # Calculate the required adjustment
+            pre_j_length = len(v_end) + len(vj_junction)
+            pre_j_adjustment_required = (3 - (pre_j_length % 3)) % 3
+            j_adjustment_required = (j_trim_length - len(j_p_nucleotides)) % 3 if len(j_start) > 0 else 0
+            adjustment_needed = (pre_j_adjustment_required + j_adjustment_required) % 3
+            
+            # Adjust the VJ junction to bring J in-frame
+            vj_junction = adjust_for_alignment(vj_junction, len(vj_junction) + adjustment_needed)
+
         recombined_sequence = v_end + vj_junction + j_start
         recombination_info['vj_junction_len'] = len(vj_junction)
 
@@ -195,3 +222,39 @@ def recombine_segments(v, d, j, apply_shm=False, shm_rate=0.001):
     recombination_info['shm_count'] = shm_count
 
     return recombined_sequence, recombination_info
+
+def adjust_for_alignment(sequence, target_length):
+    """
+    Adjust the length of a sequence to match the target length.
+    
+    Parameters:
+    sequence (str): The sequence to adjust.
+    target_length (int): The desired length of the sequence.
+    
+    Returns:
+    str: The adjusted sequence.
+    """
+    current_length = len(sequence)
+    if current_length < target_length:
+        return sequence + get_n_nucleotides(target_length - current_length)
+    elif current_length > target_length:
+        return sequence[:target_length]
+    return sequence
+
+def adjust_for_alignment(sequence, target_length):
+    """
+    Adjust the length of a sequence to match the target length.
+    
+    Parameters:
+    sequence (str): The sequence to adjust.
+    target_length (int): The desired length of the sequence.
+    
+    Returns:
+    str: The adjusted sequence.
+    """
+    current_length = len(sequence)
+    if current_length < target_length:
+        return sequence + get_n_nucleotides(length=target_length - current_length)
+    elif current_length > target_length:
+        return sequence[:target_length]
+    return sequence

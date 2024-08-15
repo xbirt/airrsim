@@ -108,7 +108,9 @@ def get_constant_region(receptor_type, constant_regions):
     else:
         raise ValueError(f"Unknown receptor type: {receptor_type}")
 
-def generate_clonotypes(receptor_type, num_clonotypes, v_file, j_file, d_file=None, c_file=None, apply_shm=False, shm_rate=0.001, append_constant_region=True):
+def generate_clonotypes(receptor_type, num_clonotypes, v_file, j_file, d_file=None,
+                         c_file=None, apply_shm=False, shm_rate=0.001,
+                         append_constant_region=True, preserve_alignment=True):
     """
     Generate clonotypes for a given receptor type.
 
@@ -122,6 +124,7 @@ def generate_clonotypes(receptor_type, num_clonotypes, v_file, j_file, d_file=No
     apply_shm (bool): Whether to apply Somatic Hypermutation (only for B cell receptors).
     shm_rate (float): The mutation rate for SHM.
     include_constant (bool): Whether to include the constant region in the output sequences.
+    preserve_alignment (bool): Whether to preserve the codon alignment when performing the recombination.
 
     Yields:
     tuple: A tuple containing the clonotype ID and sequence.
@@ -155,7 +158,7 @@ def generate_clonotypes(receptor_type, num_clonotypes, v_file, j_file, d_file=No
             # Recombine segments to create a clonotype
             variable_region, recombination_info = recombine_segments(
                 v_segment[1], d_segment[1] if d_segment else None, j_segment[1],
-                apply_shm=apply_shm, shm_rate=shm_rate
+                apply_shm=apply_shm, shm_rate=shm_rate, preserve_alignment=preserve_alignment
             )
             
             # Add constant region if specified
@@ -208,7 +211,8 @@ def generate_clonotypes(receptor_type, num_clonotypes, v_file, j_file, d_file=No
         return
 
 def simulate_receptor_repertoires(receptor_type, output_file, v_file, j_file, d_file=None, c_file=None, 
-                                  num_clonotypes=1000, shm_rate=0.001, append_constant_region=True, apply_shm=True):
+                                  num_clonotypes=1000, shm_rate=0.001, append_constant_region=True, apply_shm=True,
+                                  preserve_alignment=True):
     """
     Simulate a receptor repertoire and save it to a FASTA file.
 
@@ -227,6 +231,7 @@ def simulate_receptor_repertoires(receptor_type, output_file, v_file, j_file, d_
     shm_rate (float): The mutation rate for SHM (only applies to IG types). Default is 0.001 (0.1%).
     include_constant (bool): Whether to include the constant region in the output sequences.
     apply_shm (bool): Whether to apply somatic hypermutation. Default is True.
+    preserve_alignment (bool): Whether to preserve the codon alignment when performing the recombination.
 
     Example:
     >>> simulate_receptor_repertoires('IGH', 'output_igh_repertoire.fasta', 'IGHV.fasta', 'IGHJ.fasta', 'IGHD.fasta', 'IGHC.fasta', num_clonotypes=1000000, shm_rate=0.002)
@@ -235,7 +240,9 @@ def simulate_receptor_repertoires(receptor_type, output_file, v_file, j_file, d_
     """
     apply_shm_final = apply_shm and receptor_type.startswith('IG') and shm_rate > 0
     clonotypes = generate_clonotypes(receptor_type, num_clonotypes, v_file, j_file, d_file, c_file,
-                                     apply_shm=apply_shm_final, shm_rate=shm_rate, append_constant_region=append_constant_region)
+                                     apply_shm=apply_shm_final, shm_rate=shm_rate,
+                                     append_constant_region=append_constant_region,
+                                     preserve_alignment=preserve_alignment)
     save_fasta(clonotypes, output_file)
     
     print(f"Generated {num_clonotypes} {receptor_type} clonotypes" + 
