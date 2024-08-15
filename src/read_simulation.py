@@ -32,7 +32,7 @@ def parse_sequence_id(seq_id):
         return j_length, c_length
     return None, None
 
-def generate_reads(input_file, output_file, read_length, read_count, no_c_region=False):
+def generate_reads(input_file, output_file, read_length, read_count, with_constant_region=True):
     """
     Generate simulated reads from clonotype sequences.
     
@@ -41,7 +41,7 @@ def generate_reads(input_file, output_file, read_length, read_count, no_c_region
     output_file (str): Path to the output FASTA file for simulated reads.
     read_length (int): Length of each simulated read.
     read_count (int): Number of reads to generate.
-    no_c_region (bool): If True, try to avoid generating reads entirely within the constant region.
+    with_constant_region (bool): If True, include reads from the constant region. If False, try to avoid generating reads entirely within the constant region.
     
     Returns:
     None
@@ -62,9 +62,9 @@ def generate_reads(input_file, output_file, read_length, read_count, no_c_region
     # Check if we can avoid constant region
     sample_id = clonotypes[0][0]
     j_length, c_length = parse_sequence_id(sample_id)
-    if no_c_region and (j_length is None or c_length is None):
+    if not with_constant_region and (j_length is None or c_length is None):
         warnings.warn("Cannot avoid constant region due to incompatible sequence ID format. Proceeding with reads from all regions.")
-        no_c_region = False
+        with_constant_region = True
     
     def read_generator():
         for _ in range(read_count):
@@ -74,7 +74,7 @@ def generate_reads(input_file, output_file, read_length, read_count, no_c_region
             if len(seq) < read_length:
                 raise ValueError(f"Sequence length ({len(seq)}) is smaller than read length ({read_length}) for sequence ID: {seq_id}")
             
-            if no_c_region:
+            if not with_constant_region:
                 j_length, c_length = parse_sequence_id(seq_id)
                 max_start = len(seq) - c_length - j_length - minimum_overlap_left_of_j_region - read_length
                 if max_start < 0:
@@ -102,5 +102,5 @@ def generate_reads(input_file, output_file, read_length, read_count, no_c_region
 
     save_fasta(read_generator(), output_file)
 
-    c_region_message = "avoiding reads entirely within the constant region" if no_c_region else "including reads from all regions"
+    c_region_message = "including reads from all regions" if with_constant_region else "avoiding reads entirely within the constant region"
     print(f"Generated {read_count} reads of length {read_length}, {c_region_message}, and saved to {output_file}")

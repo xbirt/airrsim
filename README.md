@@ -62,7 +62,8 @@ Options:
 - `--shm_rate`: Somatic hypermutation rate [default: 0.001]
 - `--with-shm`: Apply somatic hypermutations [default: True]
 - `--no-shm`: Do not apply somatic hypermutations
-- `--include_constant`: Include constant region in the output sequences [default: True]
+- `--with-constant-region`: Include constant region in the output sequences [default: True]
+- `--without-constant-region`: Exclude constant region from the output sequences
 - `--v_file`, `--d_file`, `--j_file`, `--c_file`: Paths to gene segment files
 
 Example:
@@ -80,7 +81,8 @@ Options:
 - `--clonotypes`: Input file containing clonotypes [required]
 - `--read-length`: Length of each simulated read [default: 100]
 - `--read-count`: Number of reads to generate [default: 10000]
-- `--no-c-region`: Avoid generating reads that are located mostly within the constant region
+- `--with-constant-region`: Include reads from the constant region [default: True]
+- `--without-constant-region`: Exclude reads from the constant region
 
 Example:
 

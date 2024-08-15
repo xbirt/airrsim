@@ -37,7 +37,7 @@ def test_generate_reads(sample_fasta, tmp_path):
 
 def test_generate_reads_no_c_region(sample_fasta, tmp_path):
     output_file = str(tmp_path / "output_no_c.fasta")
-    generate_reads(sample_fasta, output_file, read_length=50, read_count=100, no_c_region=True)
+    generate_reads(sample_fasta, output_file, read_length=50, read_count=100, with_constant_region=False)
     
     assert os.path.exists(output_file)
     reads = read_fasta_with_error_handling(output_file, "test")
@@ -83,7 +83,7 @@ def test_generate_reads_invalid_input(tmp_path):
     output_file_no_c = str(tmp_path / "output_short_no_c.fasta")
     
     with pytest.raises(ValueError, match="Sequence is too short to generate reads with the given parameters"):
-        generate_reads(str(short_seq_no_c_fasta), output_file_no_c, read_length=50, read_count=100, no_c_region=True)
+        generate_reads(str(short_seq_no_c_fasta), output_file_no_c, read_length=50, read_count=100, with_constant_region=False)
     
     # The output file might be created but should be empty
     assert os.path.getsize(output_file_no_c) == 0
@@ -134,7 +134,7 @@ def test_generate_reads_incompatible_id_format(tmp_path):
     output_file = str(tmp_path / "output.fasta")
     
     with pytest.warns(UserWarning, match="Cannot avoid constant region due to incompatible sequence ID format"):
-        generate_reads(str(fasta_file), output_file, read_length=50, read_count=100, no_c_region=True)
+        generate_reads(str(fasta_file), output_file, read_length=50, read_count=100, with_constant_region=False)
     
     assert os.path.exists(output_file)
     reads = read_fasta_with_error_handling(output_file, "test")

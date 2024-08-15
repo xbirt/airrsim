@@ -59,7 +59,9 @@ def parse_args():
     parser_generate.add_argument('--shm_rate', type=float, default=0.001, help='Somatic hypermutation rate')
     parser_generate.add_argument('--with-shm', action='store_true', default=True, help='Apply somatic hypermutations (default: True)')
     parser_generate.add_argument('--no-shm', action='store_false', dest='with_shm', help='Do not apply somatic hypermutations')
-    parser_generate.add_argument('--include_constant', default=True, action='store_true', help='Include constant region in the output sequences')
+    constant_region_group = parser_generate.add_mutually_exclusive_group()
+    constant_region_group.add_argument('--with-constant-region', '--include-constant-region', '--with-c-region', '--include-c-region', dest='with_constant_region', action='store_true', default=True, help='Include constant region in the output sequences (default)')
+    constant_region_group.add_argument('--without-constant-region', '--exclude-constant-region', '--without-c-region', '--exclude-c-region', '--no-c-region', dest='with_constant_region', action='store_false', help='Exclude constant region from the output sequences')
     parser_generate.add_argument('--v_file', type=str, help='Path to V gene segment file')
     parser_generate.add_argument('--d_file', type=str, help='Path to D gene segment file')
     parser_generate.add_argument('--j_file', type=str, help='Path to J gene segment file')
@@ -72,7 +74,9 @@ def parse_args():
     parser_simulate.add_argument('--clonotypes', '--input', type=str, required=True, help='Input file containing clonotypes')
     parser_simulate.add_argument('--read-length', '--read-len', type=int, default=100, help='Length of each simulated read (default: 100)')
     parser_simulate.add_argument('--read-count', '--num-reads', type=int, default=10000, help='Number of reads to generate (default: 10000)')
-    parser_simulate.add_argument('--no-c-region', '--no-constant', action='store_true', help='Avoid generating reads that are located mostly within the constant region')
+    constant_region_group = parser_simulate.add_mutually_exclusive_group()
+    constant_region_group.add_argument('--with-constant-region', '--include-constant-region', '--with-c-region', '--include-c-region', dest='with_constant_region', action='store_true', default=True, help='Include reads from the constant region (default)')
+    constant_region_group.add_argument('--without-constant-region', '--exclude-constant-region', '--without-c-region', '--exclude-c-region', '--no-c-region', dest='with_constant_region', action='store_false', help='Exclude reads from the constant region')
     parser_simulate.set_defaults(func=simulate_reads)
 
     # downloadData subparser
@@ -103,7 +107,7 @@ def generate_clonotypes(args):
     v_file = args.v_file or f"{species_path}/{args.group}V.fasta"
     j_file = args.j_file or f"{species_path}/{args.group}J.fasta"
     d_file = args.d_file or f"{species_path}/{args.group}D.fasta" if receptor_has_d_segment(args.group) else None
-    c_file = args.c_file or f"{species_path}/{args.group}C.fasta" if args.include_constant else None
+    c_file = args.c_file or f"{species_path}/{args.group}C.fasta" if args.with_constant_region else None
 
     try:
         # Check for existence of required files
@@ -116,7 +120,7 @@ def generate_clonotypes(args):
 
         simulate_receptor_repertoires(args.group, args.output, v_file, j_file, d_file, c_file,
                                       num_clonotypes=args.count, shm_rate=args.shm_rate,
-                                      apply_shm=args.with_shm, include_constant=args.include_constant)
+                                      apply_shm=args.with_shm, append_constant_region=args.with_constant_region)
     except FileNotFoundError as e:
         print(e)
         exit(1)  # Exit with error code 1
@@ -139,7 +143,7 @@ def simulate_reads(args):
             output_file=args.output,
             read_length=args.read_length,
             read_count=args.read_count,
-            no_c_region=args.no_c_region
+            with_constant_region=args.with_constant_region
         )
     except FileNotFoundError as e:
         print(f"Error: {str(e)}")

@@ -108,7 +108,7 @@ def get_constant_region(receptor_type, constant_regions):
     else:
         raise ValueError(f"Unknown receptor type: {receptor_type}")
 
-def generate_clonotypes(receptor_type, num_clonotypes, v_file, j_file, d_file=None, c_file=None, apply_shm=False, shm_rate=0.001, include_constant=True):
+def generate_clonotypes(receptor_type, num_clonotypes, v_file, j_file, d_file=None, c_file=None, apply_shm=False, shm_rate=0.001, append_constant_region=True):
     """
     Generate clonotypes for a given receptor type.
 
@@ -136,7 +136,7 @@ def generate_clonotypes(receptor_type, num_clonotypes, v_file, j_file, d_file=No
 
         # Load constant regions if needed
         constant_regions = None
-        if include_constant and c_file:
+        if append_constant_region and c_file:
             constant_regions = load_constant_regions(c_file)
         
         for i in range(num_clonotypes):
@@ -160,7 +160,7 @@ def generate_clonotypes(receptor_type, num_clonotypes, v_file, j_file, d_file=No
             
             # Add constant region if specified
             c_id = None
-            if include_constant and constant_regions:
+            if append_constant_region and constant_regions:
                 constant_region, c_id = get_constant_region(receptor_type, constant_regions)
                 clonotype_seq = variable_region + constant_region
                 c_region_len = len(constant_region)
@@ -192,7 +192,7 @@ def generate_clonotypes(receptor_type, num_clonotypes, v_file, j_file, d_file=No
             clonotype_id_parts.append(f"{v_info}{vd_info}{vj_info}{d_info}")
             clonotype_id_parts.append(f"{j_info}")
             
-            if include_constant and constant_regions:
+            if append_constant_region and constant_regions:
                 clonotype_id_parts.append(f"C{c_region_len}")
             
             if recombination_info['shm_count'] > 0:
@@ -208,7 +208,7 @@ def generate_clonotypes(receptor_type, num_clonotypes, v_file, j_file, d_file=No
         return
 
 def simulate_receptor_repertoires(receptor_type, output_file, v_file, j_file, d_file=None, c_file=None, 
-                                  num_clonotypes=1000, shm_rate=0.001, include_constant=True, apply_shm=True):
+                                  num_clonotypes=1000, shm_rate=0.001, append_constant_region=True, apply_shm=True):
     """
     Simulate a receptor repertoire and save it to a FASTA file.
 
@@ -235,10 +235,10 @@ def simulate_receptor_repertoires(receptor_type, output_file, v_file, j_file, d_
     """
     apply_shm_final = apply_shm and receptor_type.startswith('IG') and shm_rate > 0
     clonotypes = generate_clonotypes(receptor_type, num_clonotypes, v_file, j_file, d_file, c_file,
-                                     apply_shm=apply_shm_final, shm_rate=shm_rate, include_constant=include_constant)
+                                     apply_shm=apply_shm_final, shm_rate=shm_rate, append_constant_region=append_constant_region)
     save_fasta(clonotypes, output_file)
     
     print(f"Generated {num_clonotypes} {receptor_type} clonotypes" + 
           (f" with SHM rate {shm_rate}" if apply_shm_final else " without SHM") +
-          (f" including constant region" if include_constant else "") +
+          (f" including constant region" if append_constant_region else "") +
           f" and saved to {output_file}")
