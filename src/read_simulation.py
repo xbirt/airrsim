@@ -76,9 +76,11 @@ def generate_reads(input_file, output_file, read_length, read_count, with_consta
             
             if not with_constant_region:
                 j_length, c_length = parse_sequence_id(seq_id)
-                max_start = len(seq) - c_length - j_length - minimum_overlap_left_of_j_region - read_length
+                max_start = len(seq) - c_length - j_length - minimum_overlap_left_of_j_region
                 if max_start < 0:
                     raise ValueError(f"Sequence is too short to generate reads with the given parameters for sequence ID: {seq_id}")
+
+                max_start = min(len(seq) - read_length, max_start)
                 start_pos = random.randint(0, max_start)
             else:
                 start_pos = random.randint(0, len(seq) - read_length)

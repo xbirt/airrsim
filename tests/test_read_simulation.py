@@ -56,7 +56,7 @@ def test_generate_reads_no_c_region(sample_fasta, tmp_path):
         j_length, c_length = parse_sequence_id(read_id)
         
         original_seq = clonotype_dict[clonotype_id]
-        assert start_pos <= len(original_seq) - c_length - j_length - 12 - len(read_seq)
+        assert start_pos <= len(original_seq) - c_length - j_length - 12
         
         # Additional check to ensure the read actually matches the original sequence
         assert read_seq == original_seq[start_pos:start_pos+len(read_seq)]
@@ -79,7 +79,7 @@ def test_generate_reads_invalid_input(tmp_path):
 
     # Test case 2: Sequence too short for no_c_region option
     short_seq_no_c_fasta = tmp_path / "short_seq_no_c.fasta"
-    short_seq_no_c_fasta.write_text(">TRB_clonotype_1_V1_J10_C10\n" + "A" * 60 + "\n")
+    short_seq_no_c_fasta.write_text(">TRB_clonotype_1_V1_J10_C48\n" + "A" * 60 + "\n")
     output_file_no_c = str(tmp_path / "output_short_no_c.fasta")
     
     with pytest.raises(ValueError, match="Sequence is too short to generate reads with the given parameters"):
