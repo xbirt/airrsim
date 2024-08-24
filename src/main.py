@@ -91,10 +91,10 @@ def parse_args():
 
 def generate_clonotypes(args):
     """
-    Handle the generateClonotypes action.
+    Handle the generateClonotypes action for multiple groups.
 
-    This function prepares the arguments, checks for the existence of required files,
-    and calls the simulate_receptor_repertoires function.
+    This function prepares the arguments, checks for the existence of required files for all groups,
+    and then calls the simulate_receptor_repertoires function for each specified group.
 
     Args:
     args (argparse.Namespace): Parsed command-line arguments.
@@ -102,32 +102,52 @@ def generate_clonotypes(args):
     Returns:
     None
     """
-    if args.output is None:
-        args.output = f"clonotypes_{args.group}.fasta"
-    
-    # Construct default file paths if not provided
-    species_path = f"data/{args.species}/{args.group}"
-    v_file = args.v_file or f"{species_path}/{args.group}V.fasta"
-    j_file = args.j_file or f"{species_path}/{args.group}J.fasta"
-    d_file = args.d_file or f"{species_path}/{args.group}D.fasta" if receptor_has_d_segment(args.group) else None
-    c_file = args.c_file or f"{species_path}/{args.group}C.fasta" if args.with_constant_region else None
+    valid_groups = ["IGH", "IGK", "IGL", "TRA", "TRB", "TRG", "TRD"]
 
-    try:
-        # Check for existence of required files
-        check_file_exists(v_file, 'V')
-        check_file_exists(j_file, 'J')
-        if d_file:
-            check_file_exists(d_file, 'D')
-        if c_file:
-            check_file_exists(c_file, 'C')
+    if args.group == "all":
+        group_list = valid_groups
+    else:
+        if args.group not in valid_groups:
+            print(f"Error: Invalid group '{args.group}'. Valid groups are: {', '.join(valid_groups)} or 'all'.")
+            exit(1)
+        group_list = [args.group]
 
-        simulate_receptor_repertoires(args.group, args.output, v_file, j_file, d_file, c_file,
+    # Check all required files before proceeding
+    for group in group_list:
+        species_path = f"data/{args.species}/{group}"
+        v_file = args.v_file or f"{species_path}/{group}V.fasta"
+        j_file = args.j_file or f"{species_path}/{group}J.fasta"
+        d_file = args.d_file or f"{species_path}/{group}D.fasta" if receptor_has_d_segment(group) else None
+        c_file = args.c_file or f"{species_path}/{group}C.fasta" if args.with_constant_region else None
+
+        try:
+            check_file_exists(v_file, 'V')
+            check_file_exists(j_file, 'J')
+            if d_file:
+                check_file_exists(d_file, 'D')
+            if c_file:
+                check_file_exists(c_file, 'C')
+        except FileNotFoundError as e:
+            print(f"Error for group {group}: {e}")
+            exit(1)  # Exit with error code 1
+
+    # Generate clonotypes for each group
+    for group in group_list:
+        if args.output is None:
+            output_file = f"clonotypes_{group}.fasta"
+        else:
+            output_file = args.output.replace('.fasta', f'_{group}.fasta')
+        
+        species_path = f"data/{args.species}/{group}"
+        v_file = args.v_file or f"{species_path}/{group}V.fasta"
+        j_file = args.j_file or f"{species_path}/{group}J.fasta"
+        d_file = args.d_file or f"{species_path}/{group}D.fasta" if receptor_has_d_segment(group) else None
+        c_file = args.c_file or f"{species_path}/{group}C.fasta" if args.with_constant_region else None
+
+        simulate_receptor_repertoires(group, output_file, v_file, j_file, d_file, c_file,
                                       num_clonotypes=args.count, shm_rate=args.shm_rate,
                                       apply_shm=args.with_shm, append_constant_region=args.with_constant_region,
                                       preserve_alignment=args.with_alignment_preservation)
-    except FileNotFoundError as e:
-        print(e)
-        exit(1)  # Exit with error code 1
 
 def simulate_reads(args):
     """
