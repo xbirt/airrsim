@@ -12,6 +12,8 @@ import re
 import warnings
 from src.utils import save_fasta, read_fasta_with_error_handling
 
+CLONOTYPE_MAX_RETRIES = 3
+
 def parse_sequence_id(seq_id):
     """
     Parse the sequence ID to extract J and C region lengths if possible.
@@ -68,12 +70,22 @@ def generate_reads(input_file, output_file, read_length, read_count, with_consta
     
     def read_generator():
         for _ in range(read_count):
-            clonotype = random.choice(clonotypes)
-            seq_id, seq = clonotype
-            
-            if len(seq) < read_length:
-                raise ValueError(f"Sequence length ({len(seq)}) is smaller than read length ({read_length}) for sequence ID: {seq_id}")
-            
+            attempts = 0
+            while True:
+                try:
+                    clonotype = random.choice(clonotypes)
+                    seq_id, seq = clonotype
+                    if len(seq) < read_length:
+                        print(f"Warning: Sequence length ({len(seq)}) is smaller than read length ({read_length}) for sequence ID: {seq_id}. Trying to pick another clonotype.")
+                        raise ValueError("Sequence too short")
+                    
+                    break
+
+                except ValueError as e:
+                    attempts += 1
+                    if attempts == CLONOTYPE_MAX_RETRIES:
+                        raise ValueError(f"Failed to find a suitable clonotype after 10 attempts: {str(e)}")
+                    
             if not with_constant_region:
                 j_length, c_length = parse_sequence_id(seq_id)
                 max_start = len(seq) - c_length - j_length - minimum_overlap_left_of_j_region
