@@ -247,5 +247,5 @@ def simulate_receptor_repertoires(receptor_type, output_file, v_file, j_file, d_
     
     print(f"Generated {num_clonotypes} {receptor_type} clonotypes" + 
           (f" with SHM rate {shm_rate}" if apply_shm_final else " without SHM") +
-          (f" including constant region" if append_constant_region else "") +
+          (" including constant region" if append_constant_region else "") +
           f" and saved to {output_file}")

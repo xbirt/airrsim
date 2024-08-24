@@ -56,7 +56,7 @@ def parse_args():
     parser_generate = subparsers.add_parser('generateClonotypes', parents=[common_parser], help='Generate clonotypes')
     parser_generate.add_argument('--output', type=str, help='Output file (default: clonotypes[group].fasta)')
     parser_generate.add_argument('--count', type=int, default=1000, help='Number of clonotypes to generate')
-    parser_generate.add_argument('--shm_rate', type=float, default=0.001, help='Somatic hypermutation rate')
+    parser_generate.add_argument('--shm-rate', type=float, default=0.001, help='Somatic hypermutation rate')
     parser_generate.add_argument('--with-shm', action='store_true', default=True, help='Apply somatic hypermutations (default: True)')
     parser_generate.add_argument('--no-shm', action='store_false', dest='with_shm', help='Do not apply somatic hypermutations')
     constant_region_group = parser_generate.add_mutually_exclusive_group()
