@@ -170,6 +170,9 @@ def generate_clonotypes(receptor_type, num_clonotypes, v_file, j_file, d_file=No
             else:
                 clonotype_seq = variable_region
 
+            # Resolve ambiguous nucleotides, if any
+            clonotype_seq = resolve_ambiguous_nucleotides(clonotype_seq)
+
             # Create an informative clonotype ID
             clonotype_id_parts = [receptor_type, f"clonotype_{i+1}", v_id]
             if d_id:
@@ -209,6 +212,27 @@ def generate_clonotypes(receptor_type, num_clonotypes, v_file, j_file, d_file=No
         print(f"Error: {str(e)}")
         print("Clonotype generation aborted.")
         return
+
+def resolve_ambiguous_nucleotides(sequence):
+    """
+    Replace ambiguous nucleotides with specific nucleotides based on IUPAC notation.
+    """
+    iupac_map = {
+        'R': 'AG', 'Y': 'CT', 'S': 'GC', 'W': 'AT', 'K': 'GT', 'M': 'AC',
+        'B': 'CGT', 'D': 'AGT', 'H': 'ACT', 'V': 'ACG',
+        'N': 'ACGT'
+    }
+    
+    resolved_sequence = ''
+    for nucleotide in sequence.upper():
+        if nucleotide in 'ACGT':
+            resolved_sequence += nucleotide
+        elif nucleotide in iupac_map:
+            resolved_sequence += random.choice(iupac_map[nucleotide])
+        else:
+            raise ValueError(f"Unexpected character in sequence: {nucleotide}")
+    
+    return resolved_sequence
 
 def simulate_receptor_repertoires(receptor_type, output_file, v_file, j_file, d_file=None, c_file=None, 
                                   num_clonotypes=1000, shm_rate=0.001, append_constant_region=True, apply_shm=True,
